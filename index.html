@@ -1,8 +1,12 @@
 <!doctype html>
 <html lang="es">
 <head>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#000000"/>
 <title>Mis Ventas — PWA</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -82,6 +86,76 @@ input[type="datetime-local"]{appearance:none;-webkit-appearance:none;padding:14p
 #appToast.show{opacity:1;transform:translateX(-50%) scale(1)}
 
 </style>
+
+    <style id="IOS_KEYBOARD_FIX_CSS">
+      html, body { height: 100%; -webkit-text-size-adjust: 100%; }
+      body.fix-ios-kb { position: static !important; overflow-y: auto !important; }
+      input, textarea, select { font-size: 16px; }
+      /* Avoid transform on input parents which can block the keyboard in iOS WKWebView */
+      .avoid-transform * { transform: none !important; }
+    </style>
+    
+
+    <script id="IOS_KEYBOARD_FIX">
+    (function(){
+      var ua = navigator.userAgent.toLowerCase();
+      var isIOS = /iphone|ipad|ipod/.test(ua);
+      var isStandalone = (window.navigator.standalone === true) || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+      if (!(isIOS && isStandalone)) return;
+
+      // Prevent scripts from calling preventDefault on input touch that would cancel focus
+      function enableFocus(el){
+        try {
+          requestAnimationFrame(function(){ el.focus({preventScroll:true}); });
+        } catch(e) { try { el.focus(); } catch(e2) {} }
+      }
+
+      // If inputs are inside elements with transform or fixed, iOS sometimes blocks the keyboard.
+      // Mark containers to avoid transforms if focusing.
+      function markParents(el){
+        var p = el;
+        var seen = 0;
+        while (p && p !== document.body && seen < 5){
+          var cs = window.getComputedStyle(p);
+          if (cs.transform && cs.transform !== 'none'){
+            p.classList.add('avoid-transform');
+          }
+          if (cs.position === 'fixed'){
+            document.body.classList.add('fix-ios-kb');
+          }
+          p = p.parentElement;
+          seen++;
+        }
+      }
+
+      document.addEventListener('touchend', function(ev){
+        var t = ev.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)){
+          markParents(t);
+          enableFocus(t);
+        }
+      }, {passive:true});
+
+      // Also make click reliably focus
+      document.addEventListener('click', function(ev){
+        var t = ev.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)){
+          markParents(t);
+          enableFocus(t);
+        }
+      }, true);
+
+      // When leaving input, restore body state
+      document.addEventListener('focusout', function(ev){
+        if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA')){
+          setTimeout(function(){
+            document.body.classList.remove('fix-ios-kb');
+          }, 300);
+        }
+      });
+    })();
+    </script>
+    
 </head>
 <body>
 <header id="appHeader" class="hidden">
